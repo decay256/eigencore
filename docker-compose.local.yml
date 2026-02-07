@@ -1,0 +1,59 @@
+# =============================================================================
+# Eigencore Local Development with Frontend
+# =============================================================================
+# Full stack for local testing: Postgres + API + Caddy + Frontend
+#
+# Usage:
+#   docker compose -f docker-compose.local.yml up
+#   # Open http://localhost in your browser
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: eigencore-db
+    environment:
+      POSTGRES_USER: eigencore
+      POSTGRES_PASSWORD: eigencore
+      POSTGRES_DB: eigencore
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eigencore -d eigencore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eigencore-api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://eigencore:eigencore@postgres:5432/eigencore
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: eigencore-caddy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - ./frontend:/srv/frontend:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+
+volumes:
+  postgres_data:
+    name: eigencore_postgres_data

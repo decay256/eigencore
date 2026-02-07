@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, UTC
 
 from app.db.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.user import UserCreate, UserResponse, TokenResponse
 from app.core.security import hash_password, verify_password, create_access_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -21,10 +22,10 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
             detail="Email already registered",
         )
     
-    # Create user
+    # Create user - get_display_name() handles username/display_name fallback
     user = User(
         email=user_data.email,
-        display_name=user_data.display_name,
+        display_name=user_data.get_display_name(),
         password_hash=hash_password(user_data.password),
     )
     db.add(user)
@@ -41,8 +42,12 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == credentials.email))
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    # OAuth2 spec uses 'username' field, but we accept email
+    result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalar_one_or_none()
     
     if not user or not user.password_hash:
@@ -51,7 +56,7 @@ async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
             detail="Invalid email or password",
         )
     
-    if not verify_password(credentials.password, user.password_hash):
+    if not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",

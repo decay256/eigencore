@@ -1,0 +1,44 @@
+# =============================================================================
+# Caddyfile.local - Local Development (HTTP only)
+# =============================================================================
+# Use this for local testing without SSL.
+#
+# Usage: 
+#   cp Caddyfile.local Caddyfile
+#   docker compose up
+# =============================================================================
+
+:80 {
+    root * /srv/frontend
+    
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    
+    handle /ws/* {
+        reverse_proxy api:8000
+    }
+    
+    handle /health {
+        reverse_proxy api:8000
+    }
+    
+    handle /docs {
+        reverse_proxy api:8000
+    }
+    
+    handle /openapi.json {
+        reverse_proxy api:8000
+    }
+    
+    handle /redoc {
+        reverse_proxy api:8000
+    }
+    
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+    
+    encode gzip
+}

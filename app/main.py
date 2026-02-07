@@ -34,11 +34,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(oauth.router)
-app.include_router(game_state.router)
-app.include_router(rooms.router)
+# Include routers with API version prefix
+API_PREFIX = "/api/v1"
+app.include_router(auth.router, prefix=API_PREFIX)
+app.include_router(oauth.router, prefix=API_PREFIX)
+app.include_router(game_state.router, prefix=API_PREFIX)
+app.include_router(rooms.router, prefix=API_PREFIX)
 
 
 @app.get("/")
