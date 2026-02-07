@@ -158,9 +158,8 @@ elements.loginForm.addEventListener('submit', async (e) => {
         // Store token
         localStorage.setItem('eigencore_token', data.access_token);
         
-        // Get user info and show success
-        const user = await getCurrentUser();
-        showSuccess(user, 'Welcome back!');
+        // Login response includes user
+        showSuccess(data.user, 'Welcome back!');
         
     } catch (err) {
         showError('login', err.message);
@@ -179,13 +178,12 @@ elements.registerForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('register-password').value;
     
     try {
-        const user = await register(email, username, password);
+        const registerData = await register(email, username, password);
         
-        // Auto-login after registration
-        const loginData = await login(email, password);
-        localStorage.setItem('eigencore_token', loginData.access_token);
+        // Register returns {access_token, user} - store token
+        localStorage.setItem('eigencore_token', registerData.access_token);
         
-        showSuccess(user, 'Account created!');
+        showSuccess(registerData.user, 'Account created!');
         
     } catch (err) {
         showError('register', err.message);
@@ -204,7 +202,7 @@ elements.oauthButtons.forEach(btn => {
         
         // Redirect to OAuth endpoint
         // The API will redirect to the provider's auth page
-        window.location.href = CONFIG.apiUrl + `/api/v1/oauth/${provider}/authorize`;
+        window.location.href = CONFIG.apiUrl + `/api/v1/auth/${provider}`;
     });
 });
 
