@@ -1,0 +1,149 @@
+# =============================================================================
+# Eigencore Docker Compose
+# =============================================================================
+# This file defines how to run the entire application stack locally.
+# 
+# Usage:
+#   docker compose up        # Start everything (foreground, see logs)
+#   docker compose up -d     # Start in background (detached)
+#   docker compose down      # Stop everything
+#   docker compose logs -f   # Follow logs
+#   docker compose ps        # See running containers
+#
+# First time setup:
+#   cp .env.example .env     # Create your config
+#   docker compose up -d     # Start services
+#   # API is now at http://localhost:8000
+#   # Swagger docs at http://localhost:8000/docs
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  # This is your persistent data store. All user accounts, game states,
+  # and room data live here.
+  #
+  # Data is stored in a Docker volume (postgres_data) so it survives
+  # container restarts. Delete the volume to reset the database.
+  
+  postgres:
+    image: postgres:16-alpine    # Alpine = smaller image
+    container_name: eigencore-db
+    
+    # Environment variables configure the database
+    # These create the database and user on first startup
+    environment:
+      POSTGRES_USER: eigencore
+      POSTGRES_PASSWORD: eigencore      # Change in production!
+      POSTGRES_DB: eigencore
+    
+    # Persist data to a named volume
+    # Without this, data is lost when the container is removed
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+    # Health check — other services wait for this before starting
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eigencore -d eigencore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    
+    # Don't expose Postgres to the outside world by default
+    # Only the API container can reach it (via Docker network)
+    # Uncomment the next 2 lines if you need direct access (debugging):
+    # ports:
+    #   - "5432:5432"
+    
+    # Restart automatically if it crashes
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Eigencore API
+  # ---------------------------------------------------------------------------
+  # The FastAPI application that handles all HTTP requests.
+  # Connects to Postgres for data storage.
+  
+  api:
+    build:
+      context: .                  # Build from current directory
+      dockerfile: Dockerfile      # Using our Dockerfile
+    container_name: eigencore-api
+    
+    # Load environment variables from .env file
+    # This is where you put secrets, OAuth keys, etc.
+    env_file:
+      - .env
+    
+    # Override DATABASE_URL to point to the postgres container
+    # "postgres" is the service name above — Docker networking resolves it
+    environment:
+      DATABASE_URL: postgresql+asyncpg://eigencore:eigencore@postgres:5432/eigencore
+    
+    # Map port 8000 inside container to 8000 on host
+    # Access the API at http://localhost:8000
+    ports:
+      - "8000:8000"
+    
+    # Wait for Postgres to be healthy before starting
+    # Prevents "connection refused" errors on startup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    # Restart automatically if it crashes
+    restart: unless-stopped
+    
+    # For development: mount code as volume for hot reload
+    # Uncomment these lines during development:
+    # volumes:
+    #   - .:/app
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+
+# =============================================================================
+# Volumes
+# =============================================================================
+# Named volumes persist data independently of containers.
+# 
+# List volumes:     docker volume ls
+# Inspect volume:   docker volume inspect eigencore_postgres_data
+# Delete volume:    docker volume rm eigencore_postgres_data  (DELETES ALL DATA!)
+
+volumes:
+  postgres_data:
+    name: eigencore_postgres_data
+
+
+# =============================================================================
+# Production Notes
+# =============================================================================
+# 
+# For production deployment, you'll want to:
+#
+# 1. Use a managed Postgres (Neon, Supabase, DigitalOcean) instead of
+#    the postgres container — better backups, scaling, and reliability.
+#
+# 2. Add a reverse proxy (Caddy or nginx) for:
+#    - HTTPS/SSL termination
+#    - Domain routing
+#    - Rate limiting
+#
+# 3. Scale the API horizontally:
+#    docker compose up -d --scale api=3
+#    (Then add a load balancer in front)
+#
+# 4. Add Redis for:
+#    - Session caching
+#    - Rate limiting
+#    - WebSocket pub/sub across multiple API instances
+#
+# Example production stack:
+#
+#   services:
+#     caddy:           # Reverse proxy with auto-HTTPS
+#     api:             # Scale to multiple instances
+#     redis:           # Caching and pub/sub
+#     # Postgres:      Use managed database instead
+# =============================================================================

@@ -1,0 +1,100 @@
+# =============================================================================
+# Eigencore Production Docker Compose
+# =============================================================================
+# This is an example of a production-ready setup with:
+# - Caddy reverse proxy (automatic HTTPS)
+# - Multiple API instances (load balanced)
+# - External/managed Postgres (not included here)
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Prerequisites:
+#   - Point your domain's DNS to this server
+#   - Set DATABASE_URL in .env to your managed Postgres
+#   - Configure OAuth redirect URIs for your domain
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Caddy Reverse Proxy
+  # ---------------------------------------------------------------------------
+  # Caddy automatically provisions HTTPS certificates from Let's Encrypt.
+  # It also load balances between multiple API instances.
+  
+  caddy:
+    image: caddy:2-alpine
+    container_name: eigencore-caddy
+    ports:
+      - "80:80"       # HTTP (redirects to HTTPS)
+      - "443:443"     # HTTPS
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro   # Caddy config
+      - caddy_data:/data                       # Certificates
+      - caddy_config:/config                   # Caddy state
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Eigencore API (Production)
+  # ---------------------------------------------------------------------------
+  # Run multiple instances for high availability and load distribution.
+  # Caddy load balances between them automatically.
+  
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      # In production, DATABASE_URL should point to managed Postgres
+      # Set this in your .env file, not here
+      DEBUG: "false"
+    
+    # Don't expose ports directly — Caddy handles external traffic
+    expose:
+      - "8000"
+    
+    # Deploy multiple replicas
+    deploy:
+      replicas: 2         # Start with 2, increase as needed
+      resources:
+        limits:
+          memory: 512M    # Limit memory per container
+        reservations:
+          memory: 256M    # Guaranteed memory
+    
+    restart: unless-stopped
+    
+    # Health check for load balancer
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+
+# =============================================================================
+# Scaling Notes
+# =============================================================================
+#
+# Scale API instances:
+#   docker compose -f docker-compose.prod.yml up -d --scale api=5
+#
+# Monitor:
+#   docker compose -f docker-compose.prod.yml ps
+#   docker compose -f docker-compose.prod.yml logs -f api
+#
+# For 10k concurrent users, you might need:
+#   - 4-6 API instances (2GB each)
+#   - A beefier droplet or multiple droplets
+#   - Managed Postgres with connection pooling
+#   - Redis for WebSocket pub/sub (room sync across instances)
+# =============================================================================
