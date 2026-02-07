@@ -242,10 +242,16 @@ function handleOAuthCallback() {
 
 function showSuccess(user, message) {
     elements.successMessage.textContent = message;
+    
+    const verificationNote = user.is_verified 
+        ? '' 
+        : '<p style="color: var(--warning); margin-top: var(--space-md); font-size: 0.875rem;">📧 Please check your email to verify your account.</p>';
+    
     elements.userInfo.innerHTML = `
         <p><strong>Display Name:</strong> <span>${escapeHtml(user.display_name)}</span></p>
         <p><strong>Email:</strong> <span>${escapeHtml(user.email || 'N/A')}</span></p>
         <p><strong>ID:</strong> <span style="font-family: var(--font-mono); font-size: 0.75rem;">${user.id}</span></p>
+        ${verificationNote}
     `;
     elements.modal.classList.add('visible');
 }

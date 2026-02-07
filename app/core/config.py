@@ -29,6 +29,16 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
     
+    # Email / SMTP
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+    
+    # Base URL for email links (frontend URL)
+    base_url: str = "http://localhost:8080"
+    
     # Server
     host: str = "0.0.0.0"
     port: int = 8000

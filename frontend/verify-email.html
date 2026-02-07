@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Eigencore ID</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📐</text></svg>">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    
+    <main class="container">
+        <div class="brand">
+            <div class="logo">
+                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="4" width="32" height="32" rx="4" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 20L20 12L28 20L20 28L12 20Z" fill="currentColor"/>
+                    <circle cx="20" cy="20" r="4" fill="var(--bg-primary)"/>
+                </svg>
+            </div>
+            <h1>Eigencore<span class="id-badge">ID</span></h1>
+        </div>
+
+        <div class="auth-card">
+            <div id="loading" class="status-message">
+                <div class="spinner"></div>
+                <p>Verifying your email...</p>
+            </div>
+            
+            <div id="success" class="status-message" style="display: none;">
+                <div class="status-icon success">✓</div>
+                <h2>Email Verified!</h2>
+                <p>Your email has been verified successfully.</p>
+                <a href="/" class="btn btn-primary">Continue to Sign In</a>
+            </div>
+            
+            <div id="error" class="status-message" style="display: none;">
+                <div class="status-icon error">✕</div>
+                <h2>Verification Failed</h2>
+                <p id="error-message">Invalid or expired token.</p>
+                <a href="/" class="btn btn-primary">Back to Sign In</a>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Eigencore &copy; 2026. Game on.</p>
+        </footer>
+    </main>
+
+    <style>
+        .status-message {
+            text-align: center;
+            padding: var(--space-lg) 0;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--bg-input);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            margin: 0 auto var(--space-lg);
+            animation: spin 0.8s linear infinite;
+        }
+        .status-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto var(--space-lg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        .status-icon.success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+        .status-icon.error {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            color: white;
+        }
+        .status-message h2 {
+            margin-bottom: var(--space-sm);
+        }
+        .status-message p {
+            color: var(--text-secondary);
+            margin-bottom: var(--space-lg);
+        }
+        .status-message .btn {
+            margin-top: var(--space-md);
+        }
+    </style>
+
+    <script>
+        const API_URL = '';
+        
+        async function verifyEmail() {
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+            
+            if (!token) {
+                showError('No verification token provided.');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/auth/verify-email`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showSuccess();
+                } else {
+                    showError(data.detail || 'Verification failed.');
+                }
+            } catch (err) {
+                showError('Network error. Please try again.');
+            }
+        }
+        
+        function showSuccess() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('success').style.display = 'block';
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+        }
+        
+        verifyEmail();
+    </script>
+</body>
+</html>
