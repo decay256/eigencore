@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Integer, Text, ForeignKey, Boolean
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, Integer, Text, ForeignKey, Boolean, Uuid
 from sqlalchemy.sql import func
 from app.db.database import Base
 import uuid
@@ -16,7 +15,7 @@ def generate_room_code(length: int = 6) -> str:
 class Room(Base):
     __tablename__ = "rooms"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4)
     
     # Room code (what players enter to join)
     code = Column(String(10), unique=True, index=True, nullable=False, default=generate_room_code)
@@ -25,7 +24,7 @@ class Room(Base):
     game_id = Column(String(100), nullable=False, index=True)
     
     # Host
-    host_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    host_user_id = Column(Uuid, ForeignKey("users.id"), nullable=False)
     
     # Room config
     max_players = Column(Integer, default=2)

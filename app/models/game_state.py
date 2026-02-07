@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Uuid
 from sqlalchemy.sql import func
 from app.db.database import Base
 import uuid
@@ -8,8 +7,8 @@ import uuid
 class GameState(Base):
     __tablename__ = "game_states"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id = Column(Uuid, ForeignKey("users.id"), nullable=False, index=True)
     
     # Game identification
     game_id = Column(String(100), nullable=False, index=True)  # e.g., "plant-simulator", "dicpic"

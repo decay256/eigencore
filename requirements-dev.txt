@@ -1,0 +1,25 @@
+# =============================================================================
+# Development Dependencies
+# =============================================================================
+# Install with: pip install -r requirements-dev.txt
+# These are only needed for development/testing, not production.
+# =============================================================================
+
+# Include production dependencies
+-r requirements.txt
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0       # Coverage reports
+httpx>=0.28.0           # Async HTTP client for testing
+
+# SQLite async driver (for in-memory test database)
+aiosqlite>=0.20.0
+
+# Code quality
+ruff>=0.4.0             # Fast linter + formatter
+mypy>=1.10.0            # Type checking
+
+# Development
+watchfiles>=0.21.0      # Auto-reload (included in uvicorn[standard])
