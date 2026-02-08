@@ -1,6 +1,18 @@
 /**
  * Eigencore Dashboard - Shared functionality
- * Handles user state, sidebar, and navigation
+ * 
+ * This module handles:
+ * - User authentication state (token in localStorage)
+ * - Loading and displaying user info
+ * - Sidebar navigation and user menu
+ * - Logout functionality
+ * - Welcome banner for new users
+ * 
+ * Included on dashboard.html, settings.html, and other authenticated pages.
+ * Automatically redirects to login if no valid token is found.
+ * 
+ * Global: window.eigencore.user - Current user object after loadUser()
+ * Global: window.eigencore.token - JWT token from localStorage
  */
 
 // Configuration
