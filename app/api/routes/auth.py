@@ -39,6 +39,16 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class UpdateProfileRequest(BaseModel):
+    display_name: str | None = None
+    avatar_url: str | None = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
 @router.post("/register", response_model=TokenResponse)
 async def register(
     user_data: UserCreate, 
@@ -248,3 +258,77 @@ async def reset_password(
     await db.commit()
     
     return MessageResponse(message="Password reset successfully")
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_profile(
+    request: UpdateProfileRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(__import__("app.api.deps", fromlist=["get_current_user"]).get_current_user),
+):
+    """Update current user's profile."""
+    if request.display_name is not None:
+        # Validate display name length
+        if len(request.display_name) < 2 or len(request.display_name) > 32:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Display name must be between 2 and 32 characters",
+            )
+        current_user.display_name = request.display_name
+    
+    if request.avatar_url is not None:
+        # Basic URL validation
+        if request.avatar_url and not request.avatar_url.startswith(('http://', 'https://')):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Avatar URL must be a valid HTTP(S) URL",
+            )
+        current_user.avatar_url = request.avatar_url or None
+    
+    await db.commit()
+    await db.refresh(current_user)
+    
+    return UserResponse.model_validate(current_user)
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    request: ChangePasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(__import__("app.api.deps", fromlist=["get_current_user"]).get_current_user),
+):
+    """Change password for password-based accounts."""
+    if not current_user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot change password for OAuth-only accounts",
+        )
+    
+    if not verify_password(request.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
+    
+    if len(request.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters",
+        )
+    
+    current_user.password_hash = hash_password(request.new_password)
+    await db.commit()
+    
+    return MessageResponse(message="Password changed successfully")
+
+
+@router.delete("/me", response_model=MessageResponse)
+async def delete_account(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(__import__("app.api.deps", fromlist=["get_current_user"]).get_current_user),
+):
+    """Delete current user's account."""
+    await db.delete(current_user)
+    await db.commit()
+    
+    return MessageResponse(message="Account deleted successfully")

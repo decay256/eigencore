@@ -254,10 +254,17 @@ function showSuccess(user, message) {
         ${verificationNote}
     `;
     elements.modal.classList.add('visible');
+    
+    // Auto-redirect to dashboard after 2 seconds
+    setTimeout(() => {
+        window.location.href = '/dashboard.html';
+    }, 2000);
 }
 
 function hideModal() {
     elements.modal.classList.remove('visible');
+    // Go to dashboard when closing success modal
+    window.location.href = '/dashboard.html';
 }
 
 elements.modalClose.addEventListener('click', hideModal);
@@ -290,14 +297,24 @@ function escapeHtml(text) {
 // ==========================================================================
 
 function init() {
+    // Check for account deletion message
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('deleted') === 'true') {
+        showError('login', 'Your account has been deleted.');
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+    
     // Check for OAuth callback
     handleOAuthCallback();
     
-    // Check if already logged in
+    // Check if already logged in - redirect to dashboard
     const token = localStorage.getItem('eigencore_token');
-    if (token) {
+    if (token && !params.get('token') && !params.get('error')) {
         getCurrentUser()
-            .then(user => showSuccess(user, 'Already signed in'))
+            .then(user => {
+                // Already logged in, go to dashboard
+                window.location.href = '/dashboard.html';
+            })
             .catch(() => {
                 // Token invalid, remove it
                 localStorage.removeItem('eigencore_token');
