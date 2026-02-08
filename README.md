@@ -8,6 +8,14 @@ Game backend API for indie games — user accounts, game state persistence, and 
   - Email/password registration and login
   - OAuth: Discord, Google, Steam
   - JWT-based sessions
+  - Email verification (optional SMTP)
+  - Password reset flow
+
+- **Profile Management**
+  - Update display name and avatar
+  - Change password
+  - View connected accounts
+  - Delete account
 
 - **Game State Persistence**
   - Save/load game state per user
@@ -20,9 +28,11 @@ Game backend API for indie games — user accounts, game state persistence, and 
   - Host controls for starting games
 
 - **Web Frontend**
-  - Dark, gaming-inspired login/register UI
+  - Dark, gaming-inspired UI
+  - Dashboard with sidebar navigation
+  - Settings page (profile, security, connections)
   - OAuth button integration
-  - Ready for white-labeling
+  - Mobile-responsive
 
 ## Quick Start with Docker
 
@@ -65,29 +75,34 @@ eigencore/
 │   ├── api/
 │   │   ├── deps.py              # Auth dependencies
 │   │   └── routes/
-│   │       ├── auth.py          # Email/password auth
+│   │       ├── auth.py          # Auth + profile management
 │   │       ├── oauth.py         # Discord/Google/Steam
 │   │       ├── game_state.py    # Save/load game state
 │   │       └── rooms.py         # Matchmaking + WebSocket
 │   ├── core/
 │   │   ├── config.py            # Settings from .env
+│   │   ├── email.py             # SMTP + email templates
 │   │   └── security.py          # JWT + password hashing
 │   ├── db/
 │   │   └── database.py          # Async SQLAlchemy + PostgreSQL
 │   ├── models/                  # Database models
 │   └── schemas/                 # Pydantic schemas (API contracts)
-├── frontend/                    # Static login/register UI
-│   ├── index.html
+├── frontend/
+│   ├── index.html               # Login/register page
+│   ├── dashboard.html           # Main dashboard
+│   ├── settings.html            # User settings
 │   └── static/
-│       ├── styles.css
-│       └── app.js
-├── Dockerfile                   # Container build instructions
-├── docker-compose.yml           # Development stack (API only)
-├── docker-compose.local.yml     # Full stack with frontend (Caddy)
-├── docker-compose.prod.yml      # Production stack
-├── Caddyfile                    # Production reverse proxy
-├── Caddyfile.local              # Local development (HTTP)
-└── .env.example                 # Configuration template
+│       ├── styles.css           # Shared styles
+│       ├── app.js               # Login page logic
+│       ├── dashboard.js         # Dashboard + sidebar
+│       └── settings.js          # Settings page logic
+├── tests/                       # Backend tests (pytest)
+├── e2e/                         # Frontend tests (Playwright)
+├── Dockerfile
+├── docker-compose.yml           # Dev (API only)
+├── docker-compose.local.yml     # Dev full stack
+├── docker-compose.prod.yml      # Production
+└── .env.example
 ```
 
 ## API Endpoints
@@ -95,14 +110,21 @@ eigencore/
 All API routes are prefixed with `/api/v1`.
 
 ### Auth
-- `POST /api/v1/auth/register` — Create account with email/password
-- `POST /api/v1/auth/login` — Login (form data: username, password)
-- `GET /api/v1/auth/me` — Get current user info
+- `POST /auth/register` — Create account (returns token + user)
+- `POST /auth/login` — Login (form data: username, password)
+- `GET /auth/me` — Get current user
+- `PATCH /auth/me` — Update profile (display_name, avatar_url)
+- `DELETE /auth/me` — Delete account
+- `POST /auth/change-password` — Change password
+- `POST /auth/verify-email` — Verify email with token
+- `POST /auth/resend-verification` — Resend verification email
+- `POST /auth/forgot-password` — Request password reset
+- `POST /auth/reset-password` — Reset password with token
 
 ### OAuth
-- `GET /api/v1/oauth/discord/authorize` — Start Discord OAuth flow
-- `GET /api/v1/oauth/google/authorize` — Start Google OAuth flow
-- `GET /api/v1/oauth/steam/authorize` — Start Steam OAuth flow
+- `GET /auth/discord` — Start Discord OAuth
+- `GET /auth/google` — Start Google OAuth
+- `GET /auth/steam` — Start Steam OAuth
 
 ### Game State
 - `GET /api/v1/games/{game_id}/state` — List all save slots
@@ -233,10 +255,31 @@ docker run -d --name eigencore-db \
 
 # Run with hot reload
 uvicorn app.main:app --reload
-
-# Run tests
-pytest -v
 ```
+
+## Testing
+
+```bash
+# Backend tests (pytest) - runs against in-memory SQLite
+pytest -v                    # All tests
+pytest tests/test_auth.py    # Just auth tests
+pytest -k "login"            # Tests matching pattern
+
+# Frontend tests (Playwright) - requires running server
+npm install
+npx playwright install
+docker compose -f docker-compose.local.yml up -d
+npx playwright test          # All e2e tests
+npx playwright test --ui     # Interactive mode
+```
+
+**Test coverage:**
+- `tests/test_auth.py` — Registration, login, profile, password, deletion
+- `tests/test_game_state.py` — CRUD, save slots, user isolation
+- `tests/test_rooms.py` — Create, join, start, permissions
+- `e2e/auth.spec.js` — Login/register flow
+- `e2e/dashboard.spec.js` — Dashboard navigation, welcome banner
+- `e2e/settings.spec.js` — Profile update, tabs, account deletion
 
 ## License
 
