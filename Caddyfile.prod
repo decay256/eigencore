@@ -1,10 +1,10 @@
 # =============================================================================
-# Caddyfile - core.eigenvektor.de
+# Caddyfile - core.dk-eigenvektor.de
 # =============================================================================
 # Caddy automatically provisions HTTPS certificates from Let's Encrypt.
 # =============================================================================
 
-core.eigenvektor.de {
+core.dk-eigenvektor.de {
     # Serve frontend static files
     root * /srv/frontend
     
@@ -66,6 +66,6 @@ core.eigenvektor.de {
 }
 
 # Redirect www to non-www (if someone tries it)
-www.core.eigenvektor.de {
-    redir https://core.eigenvektor.de{uri} permanent
+www.core.dk-eigenvektor.de {
+    redir https://core.dk-eigenvektor.de{uri} permanent
 }

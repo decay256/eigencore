@@ -1,5 +1,5 @@
 # =============================================================================
-# Eigencore Staging - core.eigenvektor.de
+# Eigencore Staging - core.dk-eigenvektor.de
 # =============================================================================
 # Like production (HTTPS, real domain) but with local Postgres.
 # Use this while testing on the shared OpenClaw droplet.
@@ -57,17 +57,17 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://eigencore:eigencore@postgres:5432/eigencore
       SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
-      BASE_URL: https://core.eigenvektor.de
+      BASE_URL: https://core.dk-eigenvektor.de
       DEBUG: "false"
       # OAuth (set in .env)
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
-      DISCORD_REDIRECT_URI: https://core.eigenvektor.de/api/v1/auth/discord/callback
+      DISCORD_REDIRECT_URI: https://core.dk-eigenvektor.de/api/v1/auth/discord/callback
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-      GOOGLE_REDIRECT_URI: https://core.eigenvektor.de/api/v1/auth/google/callback
+      GOOGLE_REDIRECT_URI: https://core.dk-eigenvektor.de/api/v1/auth/google/callback
       STEAM_API_KEY: ${STEAM_API_KEY:-}
-      STEAM_REDIRECT_URI: https://core.eigenvektor.de/api/v1/auth/steam/callback
+      STEAM_REDIRECT_URI: https://core.dk-eigenvektor.de/api/v1/auth/steam/callback
     expose:
       - "8000"
     depends_on:
