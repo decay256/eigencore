@@ -59,8 +59,9 @@ class TestLogin:
     @pytest.mark.unit
     async def test_login_success(self, client, test_user):
         """User can login with correct credentials."""
-        response = await client.post("/auth/login", json={
-            "email": "test@example.com",
+        # OAuth2 password flow uses form data with 'username' field
+        response = await client.post("/auth/login", data={
+            "username": "test@example.com",
             "password": "testpassword123",
         })
         
@@ -72,8 +73,8 @@ class TestLogin:
     @pytest.mark.unit
     async def test_login_wrong_password(self, client, test_user):
         """Login fails with incorrect password."""
-        response = await client.post("/auth/login", json={
-            "email": "test@example.com",
+        response = await client.post("/auth/login", data={
+            "username": "test@example.com",
             "password": "wrongpassword",
         })
         
@@ -83,8 +84,8 @@ class TestLogin:
     @pytest.mark.unit
     async def test_login_nonexistent_user(self, client):
         """Login fails for user that doesn't exist."""
-        response = await client.post("/auth/login", json={
-            "email": "nobody@example.com",
+        response = await client.post("/auth/login", data={
+            "username": "nobody@example.com",
             "password": "anypassword",
         })
         
@@ -123,3 +124,77 @@ class TestAuthenticatedEndpoints:
         )
         
         assert response.status_code == 401
+
+
+class TestOAuthEndpoints:
+    """Tests for OAuth authentication endpoints."""
+    
+    @pytest.mark.unit
+    async def test_discord_oauth_redirect_when_configured(self, client, monkeypatch):
+        """Discord OAuth redirects to Discord when configured."""
+        from app.api.routes import oauth
+        from app.core.config import Settings
+        
+        # Create mock settings and patch the module-level settings object
+        mock = Settings(
+            discord_client_id="test_client_id",
+            discord_client_secret="test_client_secret",
+            discord_redirect_uri="http://localhost:8000/api/v1/auth/discord/callback",
+        )
+        monkeypatch.setattr(oauth, "settings", mock)
+        
+        response = await client.get("/auth/discord", follow_redirects=False)
+        
+        assert response.status_code == 307
+        assert "discord.com" in response.headers["location"]
+        assert "client_id=test_client_id" in response.headers["location"]
+    
+    @pytest.mark.unit
+    async def test_discord_oauth_not_configured(self, client, monkeypatch):
+        """Discord OAuth returns 501 when not configured."""
+        from app.api.routes import oauth
+        from app.core.config import Settings
+        
+        mock = Settings(
+            discord_client_id=None,
+            discord_client_secret=None,
+        )
+        monkeypatch.setattr(oauth, "settings", mock)
+        
+        response = await client.get("/auth/discord")
+        
+        assert response.status_code == 501
+        assert "not configured" in response.json()["detail"].lower()
+    
+    @pytest.mark.unit
+    async def test_google_oauth_not_configured(self, client, monkeypatch):
+        """Google OAuth returns 501 when not configured."""
+        from app.api.routes import oauth
+        from app.core.config import Settings
+        
+        mock = Settings(
+            google_client_id=None,
+            google_client_secret=None,
+        )
+        monkeypatch.setattr(oauth, "settings", mock)
+        
+        response = await client.get("/auth/google")
+        
+        assert response.status_code == 501
+        assert "not configured" in response.json()["detail"].lower()
+    
+    @pytest.mark.unit
+    async def test_steam_oauth_not_configured(self, client, monkeypatch):
+        """Steam OAuth returns 501 when not configured."""
+        from app.api.routes import oauth
+        from app.core.config import Settings
+        
+        mock = Settings(
+            steam_api_key=None,
+        )
+        monkeypatch.setattr(oauth, "settings", mock)
+        
+        response = await client.get("/auth/steam")
+        
+        assert response.status_code == 501
+        assert "not configured" in response.json()["detail"].lower()

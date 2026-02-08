@@ -85,10 +85,10 @@ async def client(db_session):
     
     app.dependency_overrides[get_db] = override_get_db
     
-    # Create async HTTP client
+    # Create async HTTP client with API version prefix
     async with AsyncClient(
         transport=ASGITransport(app=app),
-        base_url="http://test"
+        base_url="http://test/api/v1"
     ) as ac:
         yield ac
     
