@@ -1,0 +1,86 @@
+# =============================================================================
+# Eigencore Staging - core.eigenvektor.de
+# =============================================================================
+# Like production (HTTPS, real domain) but with local Postgres.
+# Use this while testing on the shared OpenClaw droplet.
+#
+# Usage:
+#   docker compose -f docker-compose.stage.yml up -d
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: eigencore-db
+    environment:
+      POSTGRES_USER: eigencore
+      POSTGRES_PASSWORD: eigencore
+      POSTGRES_DB: eigencore
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eigencore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Caddy Reverse Proxy + Frontend (HTTPS)
+  # ---------------------------------------------------------------------------
+  caddy:
+    image: caddy:2-alpine
+    container_name: eigencore-caddy
+    ports:
+      - "80:80"       # HTTP (redirects to HTTPS)
+      - "443:443"     # HTTPS
+    volumes:
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - ./frontend:/srv/frontend:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Eigencore API
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: eigencore-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://eigencore:eigencore@postgres:5432/eigencore
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      BASE_URL: https://core.eigenvektor.de
+      DEBUG: "false"
+      # OAuth (set in .env)
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_REDIRECT_URI: https://core.eigenvektor.de/api/v1/auth/discord/callback
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: https://core.eigenvektor.de/api/v1/auth/google/callback
+      STEAM_API_KEY: ${STEAM_API_KEY:-}
+      STEAM_REDIRECT_URI: https://core.eigenvektor.de/api/v1/auth/steam/callback
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
