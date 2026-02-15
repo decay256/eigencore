@@ -29,15 +29,13 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:8000/auth/google/callback"
     
-    # Email / SMTP
-    smtp_host: str | None = None
-    smtp_port: int = 587
-    smtp_username: str | None = None
-    smtp_password: str | None = None
-    smtp_from_email: str | None = None
+    # Email Service - Resend API
+    resend_api_key: str | None = None
+    resend_from_email: str = "EigenCore <onboarding@resend.dev>"
     
-    # Base URL for email links (frontend URL)
-    base_url: str = "http://localhost:8080"
+    # Frontend URL for email links
+    frontend_url: str = "http://localhost:8080"
+    base_url: str = "http://localhost:8080"  # Legacy, use frontend_url
     
     # Server
     host: str = "0.0.0.0"

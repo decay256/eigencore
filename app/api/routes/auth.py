@@ -365,7 +365,7 @@ async def resend_verification(
             send_verification_email,
             user.email,
             verification_token,
-            settings.base_url
+            settings.frontend_url
         )
     
     return MessageResponse(message="If that email exists and is unverified, we've sent a verification link.")
@@ -402,7 +402,7 @@ async def forgot_password(
             send_password_reset_email,
             user.email,
             reset_token,
-            settings.base_url
+            settings.frontend_url
         )
     
     return MessageResponse(message="If that email exists, we've sent a password reset link.")

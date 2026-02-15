@@ -1,18 +1,18 @@
 """
 Email service for sending verification and password reset emails.
-Supports SMTP or can be extended for SendGrid/Mailgun/etc.
+Uses Resend API for reliable email delivery.
 """
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import os
+import requests
 from typing import Optional
 import secrets
+import logging
 from datetime import datetime, timedelta, UTC
 
 from app.core.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 def generate_token() -> str:
@@ -32,48 +32,47 @@ async def send_email(
     text_content: Optional[str] = None
 ) -> bool:
     """
-    Send an email via SMTP.
+    Send an email via Resend API.
     Returns True if successful, False otherwise.
     """
-    if not settings.smtp_host:
-        print(f"[EMAIL] SMTP not configured. Would send to {to_email}: {subject}")
-        print(f"[EMAIL] Content: {text_content or html_content[:200]}")
+    api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("RESEND_FROM_EMAIL", "EigenCore <onboarding@resend.dev>")
+    
+    if not api_key:
+        logger.warning(f"[EMAIL] Resend API key not configured. Would send to {to_email}: {subject}")
+        logger.info(f"[EMAIL] Content: {text_content or html_content[:200]}")
         return True  # Pretend success in dev mode
     
     try:
-        message = MIMEMultipart("alternative")
-        message["Subject"] = subject
-        message["From"] = settings.smtp_from_email or settings.smtp_username
-        message["To"] = to_email
+        payload = {
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_content
+        }
         
-        # Add plain text version
         if text_content:
-            message.attach(MIMEText(text_content, "plain"))
+            payload["text"] = text_content
         
-        # Add HTML version
-        message.attach(MIMEText(html_content, "html"))
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json=payload
+        )
         
-        # Create secure connection
-        context = ssl.create_default_context()
-        
-        if settings.smtp_port == 465:
-            # SSL
-            with smtplib.SMTP_SSL(settings.smtp_host, settings.smtp_port, context=context) as server:
-                if settings.smtp_username and settings.smtp_password:
-                    server.login(settings.smtp_username, settings.smtp_password)
-                server.sendmail(message["From"], to_email, message.as_string())
+        if response.status_code == 200:
+            result = response.json()
+            logger.info(f"[EMAIL] Email sent successfully to {to_email}: {result.get('id')}")
+            return True
         else:
-            # TLS (port 587) or plain
-            with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-                if settings.smtp_port == 587:
-                    server.starttls(context=context)
-                if settings.smtp_username and settings.smtp_password:
-                    server.login(settings.smtp_username, settings.smtp_password)
-                server.sendmail(message["From"], to_email, message.as_string())
-        
-        return True
+            logger.error(f"[EMAIL] Failed to send email: {response.status_code} - {response.text}")
+            return False
+            
     except Exception as e:
-        print(f"[EMAIL] Failed to send email: {e}")
+        logger.error(f"[EMAIL] Error sending email to {to_email}: {e}")
         return False
 
 
