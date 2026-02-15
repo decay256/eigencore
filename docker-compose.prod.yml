@@ -3,7 +3,7 @@
 # =============================================================================
 # Production setup with:
 # - Caddy reverse proxy (automatic HTTPS + serves frontend)
-# - Multiple API instances (load balanced)
+# - API exposed on localhost for Caddy (host network mode)
 # - External/managed Postgres (not included here)
 #
 # Usage:
@@ -11,7 +11,6 @@
 #
 # Prerequisites:
 #   - Point your domain's DNS to this server
-#   - Update Caddyfile with your actual domain
 #   - Set DATABASE_URL in .env to your managed Postgres
 #   - Configure OAuth redirect URIs for your domain
 # =============================================================================
@@ -20,20 +19,18 @@ services:
   # ---------------------------------------------------------------------------
   # Caddy Reverse Proxy + Frontend
   # ---------------------------------------------------------------------------
-  # Serves static frontend files and proxies API requests to backend.
-  # Automatic HTTPS via Let's Encrypt.
-  
+  # Uses network_mode: host to coexist with OpenClaw gateway (port 18789)
+  # and other host services. Reaches API via localhost:8000.
+
   caddy:
     image: caddy:2-alpine
     container_name: eigencore-caddy
-    ports:
-      - "80:80"       # HTTP (redirects to HTTPS)
-      - "443:443"     # HTTPS
+    network_mode: "host"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro   # Caddy config
-      - ./frontend:/srv/frontend:ro            # Frontend static files
-      - caddy_data:/data                       # Certificates
-      - caddy_config:/config                   # Caddy state
+      - ./Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - ./frontend:/srv/frontend:ro
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - api
     restart: unless-stopped
@@ -41,9 +38,8 @@ services:
   # ---------------------------------------------------------------------------
   # Eigencore API (Production)
   # ---------------------------------------------------------------------------
-  # Multiple instances for HA and load distribution.
-  # Caddy load balances between them automatically.
-  
+  # Binds to localhost:8000 so Caddy (host network) can reach it.
+
   api:
     build:
       context: .
@@ -52,20 +48,16 @@ services:
       - .env
     environment:
       DEBUG: "false"
-    
-    expose:
-      - "8000"
-    
+    ports:
+      - "127.0.0.1:8000:8000"
     deploy:
-      replicas: 2
+      replicas: 1
       resources:
         limits:
           memory: 512M
         reservations:
           memory: 256M
-    
     restart: unless-stopped
-    
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
@@ -81,16 +73,8 @@ volumes:
 # =============================================================================
 # Scaling Notes
 # =============================================================================
-#
-# Scale API instances:
-#   docker compose -f docker-compose.prod.yml up -d --scale api=5
-#
-# Monitor:
-#   docker compose -f docker-compose.prod.yml ps
-#   docker compose -f docker-compose.prod.yml logs -f api
-#
-# For 10k concurrent users:
-#   - 4-6 API instances (2GB each)
-#   - Managed Postgres with connection pooling
-#   - Redis for WebSocket pub/sub (room sync across instances)
+# With network_mode: host, scaling requires multiple ports:
+#   api-1: ports: ["127.0.0.1:8001:8000"]
+#   api-2: ports: ["127.0.0.1:8002:8000"]
+# Then in Caddyfile.prod: reverse_proxy localhost:8001 localhost:8002
 # =============================================================================
