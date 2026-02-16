@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import get_settings
 from app.db.database import init_db
-from app.api.routes import auth, oauth, game_state, rooms
+from app.api.routes import auth, oauth, game_state, rooms, pinder
 
 settings = get_settings()
 
@@ -40,6 +40,7 @@ app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(oauth.router, prefix=API_PREFIX)
 app.include_router(game_state.router, prefix=API_PREFIX)
 app.include_router(rooms.router, prefix=API_PREFIX)
+app.include_router(pinder.router, prefix=API_PREFIX)
 
 
 @app.get("/")
