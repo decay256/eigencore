@@ -1,8 +1,12 @@
 # =============================================================================
-# Caddyfile.prod - core.dk-eigenvektor.de (Production)
+# Caddyfile.stage - core.dk-eigenvektor.de (Staging)
 # =============================================================================
-# Used with docker-compose.prod.yml (network_mode: host)
-# Caddy automatically provisions HTTPS certificates from Let's Encrypt.
+# Used with docker-compose.stage.yml (host networking for Caddy).
+# Caddy auto-provisions HTTPS certificates from Let's Encrypt.
+#
+# OPENCLAW_GATEWAY: Set to "localhost:18789" when co-located with OpenClaw.
+# Defaults to localhost:18789 if unset. Remove the /magic handle block
+# for standalone eigencore deployments.
 # =============================================================================
 
 core.dk-eigenvektor.de {
@@ -36,6 +40,12 @@ core.dk-eigenvektor.de {
         reverse_proxy localhost:8000
     }
 
+    handle /magic* {
+        header -Content-Security-Policy
+        header -X-Frame-Options
+        reverse_proxy {$OPENCLAW_GATEWAY:localhost:18789}
+    }
+
     handle {
         try_files {path} /index.html
         file_server
@@ -55,17 +65,4 @@ core.dk-eigenvektor.de {
         output file /var/log/caddy/access.log
         format json
     }
-}
-
-# Redirect www (requires DNS A record)
-# www.core.dk-eigenvektor.de {
-#     redir https://core.dk-eigenvektor.de{uri} permanent
-# }
-
-# ---------------------------------------------------------------------------
-# OpenClaw Dashboard (access via server IP)
-# ---------------------------------------------------------------------------
-194.88.99.152 {
-    reverse_proxy localhost:18789
-    tls internal
 }
