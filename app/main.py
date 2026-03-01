@@ -1,21 +1,27 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import get_settings
+from app.core.logging import setup_logging
 from app.db.database import init_db
 from app.api.routes import auth, oauth, game_state, rooms, pinder
+from app.middleware.request_id import RequestIDMiddleware
 
 settings = get_settings()
+setup_logging(level="DEBUG" if settings.debug else "INFO")
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
+    logger.info("EigenCore starting up")
     await init_db()
+    logger.info("Database initialized")
     yield
-    # Shutdown
-    pass
+    logger.info("EigenCore shutting down")
 
 
 app = FastAPI(
@@ -25,7 +31,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — configured via CORS_ORIGINS env var (comma-separated)
+# Middleware (order matters — RequestID outermost so every request gets traced)
+app.add_middleware(RequestIDMiddleware)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
