@@ -33,3 +33,5 @@
 {"ts":"2026-03-01T21:34:15.138Z","agent":"product-manager","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: pm-dry-run-6b-issue-14-a2","commit":null}
 {"ts":"2026-03-01T21:34:57.536Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6b-issue-14","reviewSuccess":true}
 {"ts":"2026-03-01T21:35:09.550Z","agent":"architect","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: architect-dry-run-6b-issue-14-a3","commit":null}
+{"ts":"2026-03-01T21:35:11.743Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6b-issue-14-backend-engineer-a3","commit":null}
+{"ts":"2026-03-01T21:35:49+00:00","agent":"architect","issue":"14","component":"","action":"completed","detail":"PR #17 updated with error-response contract for issue #14","commit":"78d6164"}
