@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, DateTime, Integer, Text, ForeignKey, Boolean, Uuid
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
 import uuid
@@ -32,8 +33,10 @@ class Room(Base):
     
     # Room state
     status = Column(String(20), default="waiting")  # waiting, playing, finished
-    player_ids = Column(Text, nullable=True)  # JSON array of player UUIDs
     room_data = Column(Text, nullable=True)  # JSON - game-specific room state
+    
+    # Relationships
+    players = relationship("RoomPlayer", backref="room", cascade="all, delete-orphan", lazy="selectin")
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
