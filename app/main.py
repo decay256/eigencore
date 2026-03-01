@@ -54,4 +54,29 @@ async def root():
 
 @app.get("/health")
 async def health():
+    """Liveness probe — confirms the process is running."""
     return {"status": "healthy"}
+
+
+@app.get("/ready")
+async def readiness():
+    """Readiness probe — confirms the app can serve traffic (DB reachable)."""
+    import logging
+    logger = logging.getLogger(__name__)
+    from sqlalchemy import text
+    from app.db.database import async_session
+
+    checks = {"database": "ok"}
+    status = "ready"
+
+    try:
+        async with async_session() as session:
+            await session.execute(text("SELECT 1"))
+    except Exception as e:
+        logger.error("Readiness check failed: database unreachable: %s", e)
+        checks["database"] = f"error: {e}"
+        status = "not_ready"
+
+    from fastapi.responses import JSONResponse
+    code = 200 if status == "ready" else 503
+    return JSONResponse(status_code=code, content={"status": status, "checks": checks})
