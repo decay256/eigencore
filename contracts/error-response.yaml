@@ -1,0 +1,170 @@
+# contracts/error-response.yaml
+# Standardized error response contract for all EigenCore API endpoints.
+# Implementation: app/core/errors.py
+
+version: "1.0"
+component: error-handling
+maturity: prototype
+nfr:
+  # At prototype maturity: latency target defined
+  latency_p99_ms: 50  # error responses should be near-instant
+  consistency: "All API errors MUST use this envelope — no raw strings or ad-hoc JSON"
+
+# ---------------------------------------------------------------------------
+# Error Response Envelope
+# ---------------------------------------------------------------------------
+# Every non-2xx response from any EigenCore endpoint MUST conform to this schema.
+
+response_envelope:
+  description: >
+    Standard error envelope returned by all API error handlers.
+    Wraps both typed APIError exceptions and legacy HTTPExceptions.
+  schema:
+    type: object
+    required: [error]
+    properties:
+      error:
+        type: object
+        required: [code, message]
+        properties:
+          code:
+            type: string
+            description: >
+              Machine-readable UPPER_SNAKE_CASE error code from the registry.
+              Consumers should switch on this field, not HTTP status codes.
+            examples: ["AUTH_INVALID_CREDENTIALS", "VALIDATION_ERROR", "NOT_FOUND"]
+          message:
+            type: string
+            description: Human-readable error description. Safe to display to end users.
+          details:
+            type: array
+            description: >
+              Optional. Present only for VALIDATION_ERROR (422) responses.
+              Each entry describes one field-level validation failure.
+            items:
+              type: object
+              required: [field, message, type]
+              properties:
+                field:
+                  type: string
+                  description: Dot-separated field path (e.g. "body.email")
+                message:
+                  type: string
+                  description: Validation failure message
+                type:
+                  type: string
+                  description: Pydantic error type identifier
+          request_id:
+            type: string
+            format: uuid
+            description: >
+              Unique request identifier (UUID v4). Present when RequestIDMiddleware
+              is active. Also returned in X-Request-ID response header.
+
+# ---------------------------------------------------------------------------
+# Error Code Registry
+# ---------------------------------------------------------------------------
+# Canonical list of all error codes. Each maps to exactly one HTTP status code.
+# Implementation: ERROR_CODES dict in app/core/errors.py
+
+error_codes:
+  # Auth errors
+  AUTH_INVALID_CREDENTIALS:
+    http_status: 401
+    default_message: "Invalid email or password"
+  AUTH_TOKEN_EXPIRED:
+    http_status: 401
+    default_message: "Authentication token has expired"
+  AUTH_TOKEN_INVALID:
+    http_status: 401
+    default_message: "Invalid authentication token"
+  AUTH_EMAIL_TAKEN:
+    http_status: 409
+    default_message: "Email already registered"
+  AUTH_EMAIL_NOT_VERIFIED:
+    http_status: 403
+    default_message: "Email address not verified"
+  AUTH_FORBIDDEN:
+    http_status: 403
+    default_message: "You do not have permission to perform this action"
+  AUTH_OAUTH_ONLY:
+    http_status: 400
+    default_message: "Cannot change password for OAuth-only accounts"
+
+  # Validation
+  VALIDATION_ERROR:
+    http_status: 422
+    default_message: "Request validation failed"
+  BAD_REQUEST:
+    http_status: 400
+    default_message: "Malformed request"
+
+  # Resource
+  NOT_FOUND:
+    http_status: 404
+    default_message: "Resource not found"
+  CONFLICT:
+    http_status: 409
+    default_message: "Resource conflict"
+
+  # Rate limiting
+  RATE_LIMITED:
+    http_status: 429
+    default_message: "Too many requests"
+
+  # Server
+  INTERNAL_ERROR:
+    http_status: 500
+    default_message: "An unexpected error occurred"
+
+# ---------------------------------------------------------------------------
+# Middleware & Handlers
+# ---------------------------------------------------------------------------
+
+middleware:
+  RequestIDMiddleware:
+    description: >
+      Assigns UUID v4 to request.state.request_id for every request.
+      Sets X-Request-ID response header.
+
+exception_handlers:
+  - exception: APIError
+    description: >
+      Handles typed APIError exceptions (subclass of HTTPException).
+      Uses error_code, error_message, and error_details from the exception.
+    priority: 1  # registered before HTTPException (subclass priority)
+
+  - exception: HTTPException
+    description: >
+      Wraps legacy FastAPI HTTPExceptions in the standard envelope.
+      Maps HTTP status code + detail text to the best-matching error code
+      using _map_status_to_code heuristics.
+    priority: 2
+
+  - exception: RequestValidationError
+    description: >
+      Wraps Pydantic/FastAPI validation errors. Returns VALIDATION_ERROR
+      code with per-field details array.
+    priority: 3
+
+  - exception: Exception
+    description: >
+      Catch-all for unhandled exceptions. Returns INTERNAL_ERROR.
+      Never exposes internal details to the client.
+    priority: 4
+
+# ---------------------------------------------------------------------------
+# Usage Contract
+# ---------------------------------------------------------------------------
+# How other components should raise errors:
+#
+#   from app.core.errors import APIError
+#   raise APIError("AUTH_EMAIL_TAKEN")
+#   raise APIError("NOT_FOUND", message="Game save not found")
+#   raise APIError("BAD_REQUEST", message="Room is full")
+#
+# Legacy HTTPExceptions are auto-wrapped but new code SHOULD use APIError.
+
+dependencies: []
+owned_by: core
+consumers: [auth, oauth, game-state, rooms, pinder, frontend]

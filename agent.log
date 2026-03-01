@@ -1,0 +1,35 @@
+{"ts":"2026-03-01T21:23:59.845Z","agent":"architect","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6-issue-14-architect-a0","commit":null}
+{"ts":"2026-03-01T21:24:23+00:00","agent":"architect","issue":"14","component":"","action":"started","detail":"Starting work on: Create contract for: Standardize error response format","commit":null}
+{"ts":"2026-03-01T21:25:52+00:00","agent":"architect","issue":"14","component":"","action":"completed","detail":"PR #17 opened for standardized error response contract","commit":"0f94357"}
+{"ts":"2026-03-01T21:26:01.048Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6-issue-14-backend-engineer-a0","commit":null}
+{"ts":"2026-03-01T21:26:22.209Z","agent":"code-reviewer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: code-review-dry-run-6-issue-14","commit":null}
+{"ts":"2026-03-01T21:26:42.356Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6-issue-14","reviewSuccess":true}
+{"ts":"2026-03-01T21:26:43+00:00","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Starting work on: Standardize error response format","commit":null}
+{"ts":"2026-03-01T21:26:44.533Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6-issue-14-backend-engineer-a1","commit":null}
+{"ts":"2026-03-01T21:27:02+00:00","agent":"code-reviewer","issue":"14","component":"","action":"review-done","detail":"PR #17 approved with 3 non-blocking suggestions","commit":null}
+{"ts":"2026-03-01T21:27:02+00:00","agent":"code-reviewer","issue":"14","component":"","action":"completed","detail":"Code review done for PR #17","commit":null}
+{"ts":"2026-03-01T21:27:12+00:00","agent":"code-reviewer","issue":"14","component":"","action":"review-done","detail":"PR #17 approved with 3 non-blocking suggestions","commit":null}
+{"ts":"2026-03-01T21:27:12+00:00","agent":"code-reviewer","issue":"14","component":"","action":"completed","detail":"Code review done for PR #17","commit":null}
+{"ts":"2026-03-01T21:27:26.188Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6-issue-14","reviewSuccess":true}
+{"ts":"2026-03-01T21:27:28.467Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6-issue-14-backend-engineer-a2","commit":null}
+{"ts":"2026-03-01T21:27:29.721Z","agent":"product-manager","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: pm-dry-run-6-issue-14-a2","commit":null}
+{"ts":"2026-03-01T21:28:12.254Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6-issue-14","reviewSuccess":true}
+{"ts":"2026-03-01T21:28:15.934Z","agent":"architect","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: architect-dry-run-6-issue-14-a3","commit":null}
+{"ts":"2026-03-01T21:28:17.421Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6-issue-14-backend-engineer-a3","commit":null}
+{"ts":"2026-03-01T21:29:29.608Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6-issue-14","reviewSuccess":true}
+{"ts":"2026-03-01T21:31:40+00:00","agent":"backend-engineer","issue":"14","component":"","action":"completed","detail":"PR #18 opened for issue #14 - standardized error response format","commit":"af1394b"}
+{"ts":"2026-03-01T21:32:15.969Z","agent":"architect","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6b-issue-14-architect-a0","commit":null}
+{"ts":"2026-03-01T21:32:37.081Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6b-issue-14-backend-engineer-a0","commit":null}
+{"ts":"2026-03-01T21:32:58.212Z","agent":"code-reviewer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: code-review-dry-run-6b-issue-14","commit":null}
+{"ts":"2026-03-01T21:33:01+00:00","agent":"architect","issue":"14","component":"","action":"started","detail":"Starting work on: Create contract for: Standardize error response format","commit":null}
+{"ts":"2026-03-01T21:33:18.348Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6b-issue-14","reviewSuccess":true}
+{"ts":"2026-03-01T21:33:21.967Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6b-issue-14-backend-engineer-a1","commit":null}
+{"ts":"2026-03-01T21:33:59+00:00","agent":"code-reviewer","issue":"14","component":"","action":"review-done","detail":"PR #18 approved with 3 non-blocking notes","commit":null}
+{"ts":"2026-03-01T21:33:59+00:00","agent":"code-reviewer","issue":"14","component":"","action":"completed","detail":"Code review done for PR #18","commit":null}
+{"ts":"2026-03-01T21:34:04.334Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6b-issue-14","reviewSuccess":true}
+{"ts":"2026-03-01T21:34:10+00:00","agent":"code-reviewer","issue":"14","component":"","action":"review-done","detail":"PR #18 approved with 3 non-blocking notes (comment mode - self-PR)","commit":null}
+{"ts":"2026-03-01T21:34:10+00:00","agent":"code-reviewer","issue":"14","component":"","action":"completed","detail":"Code review done for PR #18","commit":null}
+{"ts":"2026-03-01T21:34:13.261Z","agent":"backend-engineer","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: sprint-dry-run-6b-issue-14-backend-engineer-a2","commit":null}
+{"ts":"2026-03-01T21:34:15.138Z","agent":"product-manager","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: pm-dry-run-6b-issue-14-a2","commit":null}
+{"ts":"2026-03-01T21:34:57.536Z","issue":"14","action":"review-done","source":"workflow","reviewerSessionId":"code-review-dry-run-6b-issue-14","reviewSuccess":true}
+{"ts":"2026-03-01T21:35:09.550Z","agent":"architect","issue":"14","component":"","action":"started","detail":"Agent spawned via Temporal spawnAgent activity. correlationId: architect-dry-run-6b-issue-14-a3","commit":null}
