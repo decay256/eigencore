@@ -37,6 +37,14 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:8080"
     base_url: str = "http://localhost:8080"  # Legacy, use frontend_url
     
+    # CORS
+    cors_origins: str = "http://localhost:8080,http://localhost:3000"  # Comma-separated allowed origins
+    
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """Parse comma-separated CORS origins into a list."""
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+    
     # Server
     host: str = "0.0.0.0"
     port: int = 8000
