@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from app.core.config import get_settings
 from app.db.database import init_db
 from app.api.routes import auth, oauth, game_state, rooms, pinder
+from app.middleware.validation import RequestValidationMiddleware, register_validation_handlers
 
 settings = get_settings()
 
@@ -24,6 +25,10 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Request validation (exception handlers + middleware)
+register_validation_handlers(app)
+app.add_middleware(RequestValidationMiddleware)
 
 # CORS
 app.add_middleware(
