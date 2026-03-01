@@ -140,7 +140,7 @@ class TestRoomJoining:
         )
         
         assert join_response.status_code == 400
-        assert "full" in join_response.json()["detail"].lower()
+        assert "full" in join_response.json()["error"]["message"].lower()
     
     @pytest.mark.unit
     async def test_rejoin_room(self, client, test_user, auth_token):
@@ -248,4 +248,4 @@ class TestRoomStatus:
         )
         
         assert start_response.status_code == 403
-        assert "host" in start_response.json()["detail"].lower()
+        assert "host" in start_response.json()["error"]["message"].lower()

@@ -38,8 +38,8 @@ class TestRegistration:
             "display_name": "Another User",
         })
         
-        assert response.status_code == 400
-        assert "already registered" in response.json()["detail"].lower()
+        assert response.status_code == 409
+        assert "already registered" in response.json()["error"]["message"].lower()
     
     @pytest.mark.unit
     async def test_register_invalid_email(self, client):
@@ -79,7 +79,7 @@ class TestLogin:
         })
         
         assert response.status_code == 401
-        assert "invalid" in response.json()["detail"].lower()
+        assert "invalid" in response.json()["error"]["message"].lower()
     
     @pytest.mark.unit
     async def test_login_nonexistent_user(self, client):
@@ -152,7 +152,7 @@ class TestProfileUpdate:
         )
         
         assert response.status_code == 400
-        assert "2 and 32" in response.json()["detail"]
+        assert "2 and 32" in response.json()["error"]["message"]
     
     @pytest.mark.unit
     async def test_update_avatar_url(self, client, test_user, auth_token):
@@ -177,7 +177,7 @@ class TestProfileUpdate:
         )
         
         assert response.status_code == 400
-        assert "HTTP" in response.json()["detail"]
+        assert "HTTP" in response.json()["error"]["message"]
 
 
 class TestPasswordChange:
@@ -224,8 +224,8 @@ class TestPasswordChange:
             }
         )
         
-        assert response.status_code == 400
-        assert "incorrect" in response.json()["detail"].lower()
+        assert response.status_code == 401
+        assert "incorrect" in response.json()["error"]["message"].lower()
     
     @pytest.mark.unit
     async def test_change_password_too_short(self, client, test_user, auth_token):
@@ -240,7 +240,7 @@ class TestPasswordChange:
         )
         
         assert response.status_code == 400
-        assert "8 characters" in response.json()["detail"]
+        assert "8 characters" in response.json()["error"]["message"]
 
 
 class TestAccountDeletion:
@@ -303,7 +303,7 @@ class TestOAuthEndpoints:
         response = await client.get("/auth/discord")
         
         assert response.status_code == 501
-        assert "not configured" in response.json()["detail"].lower()
+        assert "not configured" in response.json()["error"]["message"].lower()
     
     @pytest.mark.unit
     async def test_google_oauth_not_configured(self, client, monkeypatch):
@@ -320,7 +320,7 @@ class TestOAuthEndpoints:
         response = await client.get("/auth/google")
         
         assert response.status_code == 501
-        assert "not configured" in response.json()["detail"].lower()
+        assert "not configured" in response.json()["error"]["message"].lower()
     
     @pytest.mark.unit
     async def test_steam_oauth_not_configured(self, client, monkeypatch):
@@ -336,4 +336,4 @@ class TestOAuthEndpoints:
         response = await client.get("/auth/steam")
         
         assert response.status_code == 501
-        assert "not configured" in response.json()["detail"].lower()
+        assert "not configured" in response.json()["error"]["message"].lower()

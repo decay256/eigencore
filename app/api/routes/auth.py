@@ -19,6 +19,7 @@ Endpoints:
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordRequestForm
+from app.core.errors import APIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, UTC
@@ -104,10 +105,7 @@ async def register(
     # Check if email already exists
     result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
-        )
+        raise APIError("AUTH_EMAIL_TAKEN")
     
     # Generate verification token
     verification_token = generate_token()
@@ -163,16 +161,10 @@ async def login(
     user = result.scalar_one_or_none()
     
     if not user or not user.password_hash:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
+        raise APIError("AUTH_INVALID_CREDENTIALS")
     
     if not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
+        raise APIError("AUTH_INVALID_CREDENTIALS")
     
     # Update last login timestamp
     user.last_login = datetime.now(UTC)
@@ -220,18 +212,12 @@ async def update_profile(
     """
     if request.display_name is not None:
         if len(request.display_name) < 2 or len(request.display_name) > 32:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Display name must be between 2 and 32 characters",
-            )
+            raise APIError("BAD_REQUEST", message="Display name must be between 2 and 32 characters")
         current_user.display_name = request.display_name
     
     if request.avatar_url is not None:
         if request.avatar_url and not request.avatar_url.startswith(('http://', 'https://')):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Avatar URL must be a valid HTTP(S) URL",
-            )
+            raise APIError("BAD_REQUEST", message="Avatar URL must be a valid HTTP(S) URL")
         current_user.avatar_url = request.avatar_url or None
     
     await db.commit()
@@ -256,22 +242,13 @@ async def change_password(
         400: OAuth-only account, wrong current password, or weak new password
     """
     if not current_user.password_hash:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cannot change password for OAuth-only accounts",
-        )
+        raise APIError("AUTH_OAUTH_ONLY")
     
     if not verify_password(request.current_password, current_user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect",
-        )
+        raise APIError("AUTH_INVALID_CREDENTIALS", message="Current password is incorrect")
     
     if len(request.new_password) < 8:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be at least 8 characters",
-        )
+        raise APIError("BAD_REQUEST", message="New password must be at least 8 characters")
     
     current_user.password_hash = hash_password(request.new_password)
     await db.commit()
@@ -319,16 +296,10 @@ async def verify_email(
     user = result.scalar_one_or_none()
     
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification token",
-        )
+        raise APIError("BAD_REQUEST", message="Invalid or expired verification token")
     
     if user.email_verification_expires and user.email_verification_expires < datetime.now(UTC):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Verification token has expired. Please request a new one.",
-        )
+        raise APIError("BAD_REQUEST", message="Verification token has expired. Please request a new one.")
     
     # Mark as verified and clear token
     user.is_verified = True
@@ -427,16 +398,10 @@ async def reset_password(
     user = result.scalar_one_or_none()
     
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired reset token",
-        )
+        raise APIError("BAD_REQUEST", message="Invalid or expired reset token")
     
     if user.password_reset_expires and user.password_reset_expires < datetime.now(UTC):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Reset token has expired. Please request a new one.",
-        )
+        raise APIError("BAD_REQUEST", message="Reset token has expired. Please request a new one.")
     
     # Update password and clear token
     user.password_hash = hash_password(request.new_password)
