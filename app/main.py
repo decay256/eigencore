@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import get_settings
+from app.core.errors import register_error_handlers
 from app.db.database import init_db
 from app.api.routes import auth, oauth, game_state, rooms, pinder
 
@@ -41,6 +42,9 @@ app.include_router(oauth.router, prefix=API_PREFIX)
 app.include_router(game_state.router, prefix=API_PREFIX)
 app.include_router(rooms.router, prefix=API_PREFIX)
 app.include_router(pinder.router, prefix=API_PREFIX)
+
+# Standardized error responses (Issue #14)
+register_error_handlers(app)
 
 
 @app.get("/")
