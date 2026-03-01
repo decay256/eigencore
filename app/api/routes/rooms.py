@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import json
-from typing import Dict, Set
 from uuid import UUID
 
 from app.db.database import get_db
@@ -11,11 +10,9 @@ from app.models.room import Room, generate_room_code
 from app.schemas.room import RoomCreate, RoomJoin, RoomResponse
 from app.api.deps import get_current_user
 from app.core.security import decode_token
+from app.core.connection_manager import manager
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
-
-# In-memory WebSocket connections (for production, use Redis pub/sub)
-room_connections: Dict[str, Set[WebSocket]] = {}
 
 
 def parse_player_ids(player_ids_str: str | None) -> list[UUID]:
@@ -161,9 +158,7 @@ async def start_room(
     await db.commit()
     
     # Notify connected clients
-    if code.upper() in room_connections:
-        for ws in room_connections[code.upper()]:
-            await ws.send_json({"type": "game_started"})
+    await manager.broadcast(code, {"type": "game_started"})
     
     return {"ok": True}
 
@@ -200,21 +195,17 @@ async def room_websocket(
     await websocket.accept()
     
     # Add to room connections
-    if code.upper() not in room_connections:
-        room_connections[code.upper()] = set()
-    room_connections[code.upper()].add(websocket)
+    manager.connect(code, websocket)
     
     try:
         while True:
             data = await websocket.receive_json()
             
             # Broadcast to all other clients in the room
-            for ws in room_connections.get(code.upper(), set()):
-                if ws != websocket:
-                    await ws.send_json({
-                        "type": "message",
-                        "from": str(user_id),
-                        "data": data,
-                    })
+            await manager.broadcast_except(
+                code,
+                {"type": "message", "from": str(user_id), "data": data},
+                exclude=websocket,
+            )
     except WebSocketDisconnect:
-        room_connections.get(code.upper(), set()).discard(websocket)
+        manager.disconnect(code, websocket)
